@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -83,19 +82,74 @@ export const IconGenerator = ({ config, updateConfig }: IconGeneratorProps) => {
     }
   };
 
-  const downloadIcons = () => {
-    toast({
-      title: "Downloading Icons",
-      description: "Preparing icon package for download...",
-    });
-    
-    // In a real implementation, this would create a zip file with all icon sizes
-    setTimeout(() => {
+  const downloadIcons = async () => {
+    if (!uploadedImage || config.icons.length === 0) {
       toast({
-        title: "Icons Downloaded",
-        description: "Icon package has been downloaded successfully!",
+        title: "Nenhum ícone disponível",
+        description: "Por favor, faça upload de uma imagem primeiro para gerar os ícones.",
+        variant: "destructive",
       });
-    }, 1000);
+      return;
+    }
+
+    toast({
+      title: "Baixando Ícones",
+      description: "Preparando pacote de ícones para download...",
+    });
+
+    try {
+      // Create a canvas to resize the image for each icon size
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const img = new Image();
+      
+      img.onload = async () => {
+        const zip = await import('jszip');
+        const JSZip = zip.default;
+        const zipFile = new JSZip();
+        
+        for (const { size, purpose } of iconSizes) {
+          const [width, height] = size.split('x').map(Number);
+          canvas.width = width;
+          canvas.height = height;
+          
+          // Draw the resized image
+          ctx?.drawImage(img, 0, 0, width, height);
+          
+          // Convert to blob
+          const blob = await new Promise<Blob>((resolve) => {
+            canvas.toBlob((blob) => resolve(blob!), 'image/png');
+          });
+          
+          // Add to zip with appropriate filename
+          const filename = `icon-${size}-${purpose}.png`;
+          zipFile.file(filename, blob);
+        }
+        
+        // Generate zip file and download
+        const content = await zipFile.generateAsync({ type: 'blob' });
+        const url = URL.createObjectURL(content);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'pwa-icons.zip';
+        a.click();
+        URL.revokeObjectURL(url);
+        
+        toast({
+          title: "Ícones Baixados",
+          description: "Pacote de ícones foi baixado com sucesso!",
+        });
+      };
+      
+      img.src = uploadedImage;
+    } catch (error) {
+      console.error('Erro ao baixar ícones:', error);
+      toast({
+        title: "Erro no Download",
+        description: "Falha ao baixar os ícones. Tente novamente.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
