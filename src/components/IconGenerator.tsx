@@ -5,6 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Upload, Download, RefreshCw, Check } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { PWAConfig } from './PWAGenerator';
+import JSZip from 'jszip';
 
 interface IconGeneratorProps {
   config: PWAConfig;
@@ -104,8 +105,6 @@ export const IconGenerator = ({ config, updateConfig }: IconGeneratorProps) => {
       const img = new Image();
       
       img.onload = async () => {
-        const zip = await import('jszip');
-        const JSZip = zip.default;
         const zipFile = new JSZip();
         
         for (const { size, purpose } of iconSizes) {
