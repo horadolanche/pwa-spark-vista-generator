@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,12 +6,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Smartphone, Download, Eye, Settings, Image, Code } from 'lucide-react';
+import { Smartphone, Download, Eye, Settings, Image, Code, Zap, List } from 'lucide-react';
 import { PWAPreview } from './PWAPreview';
 import { IconGenerator } from './IconGenerator';
 import { ManifestConfig } from './ManifestConfig';
 import { ServiceWorkerConfig } from './ServiceWorkerConfig';
+import { GeneratedPWAsList } from './GeneratedPWAsList';
 import { useToast } from '@/hooks/use-toast';
+import { pwaGenerationService, GeneratedPWA } from '@/services/pwaGenerationService';
 
 export interface PWAConfig {
   name: string;
@@ -58,10 +59,55 @@ const PWAGenerator = () => {
 
   const [activeTab, setActiveTab] = useState('manifest');
   const [previewMode, setPreviewMode] = useState<'mobile' | 'desktop'>('mobile');
+  const [generatedPWAs, setGeneratedPWAs] = useState<GeneratedPWA[]>([]);
+  const [isGenerating, setIsGenerating] = useState(false);
 
   const updateConfig = useCallback((updates: Partial<PWAConfig>) => {
     setConfig(prev => ({ ...prev, ...updates }));
   }, []);
+
+  const generatePWA = async () => {
+    setIsGenerating(true);
+    
+    try {
+      toast({
+        title: "Gerando PWA...",
+        description: "Criando estrutura de arquivos e configurações...",
+      });
+
+      const generatedPWA = await pwaGenerationService.generatePWA(config);
+      
+      setGeneratedPWAs(prev => [generatedPWA, ...prev]);
+      
+      toast({
+        title: "PWA Gerado com Sucesso! 🚀",
+        description: `${config.name} está pronto e acessível via link direto.`,
+      });
+
+      // Automaticamente muda para a aba de PWAs gerados
+      setActiveTab('generated');
+      
+    } catch (error) {
+      toast({
+        title: "Erro na Geração",
+        description: "Falha ao gerar o PWA. Tente novamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleDeletePWA = (id: string) => {
+    const deleted = pwaGenerationService.deletePWA(id);
+    if (deleted) {
+      setGeneratedPWAs(prev => prev.filter(pwa => pwa.id !== id));
+      toast({
+        title: "PWA Excluído",
+        description: "O PWA foi removido com sucesso.",
+      });
+    }
+  };
 
   const generateManifest = () => {
     const manifest = {
@@ -119,7 +165,7 @@ const PWAGenerator = () => {
             PWA Generator
           </h1>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Create complete Progressive Web Apps with manifest, icons, service worker, and real-time preview
+            Crie PWAs completos instantaneamente com links diretos para acesso imediato
           </p>
         </div>
 
@@ -133,12 +179,12 @@ const PWAGenerator = () => {
                   PWA Configuration
                 </CardTitle>
                 <CardDescription>
-                  Configure your Progressive Web App settings
+                  Configure seu PWA e gere instantaneamente com link direto
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                  <TabsList className="grid w-full grid-cols-4">
+                  <TabsList className="grid w-full grid-cols-5">
                     <TabsTrigger value="manifest" className="text-xs">
                       <Code className="w-4 h-4 mr-1" />
                       Manifest
@@ -149,11 +195,15 @@ const PWAGenerator = () => {
                     </TabsTrigger>
                     <TabsTrigger value="sw" className="text-xs">
                       <Settings className="w-4 h-4 mr-1" />
-                      Service Worker
+                      SW
                     </TabsTrigger>
                     <TabsTrigger value="preview" className="text-xs">
                       <Eye className="w-4 h-4 mr-1" />
                       Preview
+                    </TabsTrigger>
+                    <TabsTrigger value="generated" className="text-xs">
+                      <List className="w-4 h-4 mr-1" />
+                      PWAs ({generatedPWAs.length})
                     </TabsTrigger>
                   </TabsList>
 
@@ -189,9 +239,16 @@ const PWAGenerator = () => {
                         </Button>
                       </div>
                       <div className="text-sm text-gray-600">
-                        Preview how your PWA will look on different devices
+                        Preview como seu PWA aparecerá em diferentes dispositivos
                       </div>
                     </div>
+                  </TabsContent>
+
+                  <TabsContent value="generated">
+                    <GeneratedPWAsList 
+                      pwas={generatedPWAs} 
+                      onDelete={handleDeletePWA}
+                    />
                   </TabsContent>
                 </Tabs>
               </CardContent>
@@ -200,21 +257,29 @@ const PWAGenerator = () => {
             {/* Action Buttons */}
             <div className="flex gap-4">
               <Button 
-                onClick={downloadManifest}
-                variant="outline"
-                className="flex-1"
-              >
-                <Download className="w-4 h-4 mr-2" />
-                Download Manifest
-              </Button>
-              <Button 
-                onClick={downloadAll}
+                onClick={generatePWA}
+                disabled={isGenerating}
                 className="flex-1 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
               >
-                <Download className="w-4 h-4 mr-2" />
-                Download All Files
+                <Zap className="w-4 h-4 mr-2" />
+                {isGenerating ? 'Gerando...' : 'Gerar PWA Instantâneo'}
               </Button>
             </div>
+
+            {/* Info Card */}
+            <Card className="border-blue-200 bg-blue-50/50">
+              <CardContent className="p-4">
+                <div className="text-sm space-y-2">
+                  <h4 className="font-medium text-blue-900">✨ Novo Fluxo Instantâneo:</h4>
+                  <ul className="space-y-1 text-blue-700">
+                    <li>• PWA gerado automaticamente na estrutura do sistema</li>
+                    <li>• Link direto criado para acesso imediato</li>
+                    <li>• Copie e compartilhe o link instantaneamente</li>
+                    <li>• Sem necessidade de download manual</li>
+                  </ul>
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
           {/* Preview Panel */}
