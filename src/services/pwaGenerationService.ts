@@ -1,4 +1,3 @@
-
 export interface GeneratedPWA {
   id: string;
   name: string;
@@ -11,6 +10,35 @@ export interface GeneratedPWA {
 
 class PWAGenerationService {
   private generatedPWAs: GeneratedPWA[] = [];
+  private storageKey = 'generated-pwas';
+
+  constructor() {
+    this.loadFromStorage();
+  }
+
+  private loadFromStorage() {
+    try {
+      const stored = localStorage.getItem(this.storageKey);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        this.generatedPWAs = parsed.map((pwa: any) => ({
+          ...pwa,
+          createdAt: new Date(pwa.createdAt)
+        }));
+      }
+    } catch (error) {
+      console.error('Erro ao carregar PWAs do storage:', error);
+      this.generatedPWAs = [];
+    }
+  }
+
+  private saveToStorage() {
+    try {
+      localStorage.setItem(this.storageKey, JSON.stringify(this.generatedPWAs));
+    } catch (error) {
+      console.error('Erro ao salvar PWAs no storage:', error);
+    }
+  }
 
   generatePWAId(): string {
     return Date.now().toString(36) + Math.random().toString(36).substr(2);
@@ -22,8 +50,7 @@ class PWAGenerationService {
     // Simula a criação da estrutura de arquivos
     const pwaStructure = this.createPWAStructure(config, pwaId);
     
-    // Simula o salvamento dos arquivos (em uma implementação real, 
-    // isso seria feito no servidor)
+    // Simula o salvamento dos arquivos
     await this.savePWAFiles(pwaId, pwaStructure);
     
     const generatedPWA: GeneratedPWA = {
@@ -36,7 +63,8 @@ class PWAGenerationService {
       config: config
     };
     
-    this.generatedPWAs.push(generatedPWA);
+    this.generatedPWAs.unshift(generatedPWA); // Add to beginning
+    this.saveToStorage();
     
     return generatedPWA;
   }
@@ -123,7 +151,7 @@ self.addEventListener('fetch', (event) => {
         }
       })
   );
-});`;
+};`;
   }
 
   private generateIndexHtml(config: any): string {
@@ -237,9 +265,22 @@ self.addEventListener('fetch', (event) => {
   }
 
   private async savePWAFiles(pwaId: string, structure: any): Promise<void> {
-    // Em uma implementação real, isso salvaria os arquivos no servidor
-    // Por agora, vamos simular o processo
     console.log(`Salvando PWA ${pwaId} com estrutura:`, structure);
+    
+    // Em uma implementação real, isso salvaria os arquivos no servidor
+    // Por agora, vamos simular o processo e salvar no localStorage para demonstração
+    try {
+      const pwaFiles = {
+        id: pwaId,
+        structure: structure,
+        savedAt: new Date().toISOString()
+      };
+      
+      localStorage.setItem(`pwa-files-${pwaId}`, JSON.stringify(pwaFiles));
+      console.log(`PWA ${pwaId} salvo com sucesso!`);
+    } catch (error) {
+      console.error(`Erro ao salvar PWA ${pwaId}:`, error);
+    }
     
     // Simula delay de salvamento
     await new Promise(resolve => setTimeout(resolve, 1000));
@@ -257,6 +298,15 @@ self.addEventListener('fetch', (event) => {
     const index = this.generatedPWAs.findIndex(pwa => pwa.id === id);
     if (index !== -1) {
       this.generatedPWAs.splice(index, 1);
+      this.saveToStorage();
+      
+      // Remove files from localStorage too
+      try {
+        localStorage.removeItem(`pwa-files-${id}`);
+      } catch (error) {
+        console.error(`Erro ao remover arquivos do PWA ${id}:`, error);
+      }
+      
       return true;
     }
     return false;
