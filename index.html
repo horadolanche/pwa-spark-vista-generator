@@ -8,6 +8,9 @@
     <meta name="description" content="Complete PWA Generator - Create progressive web apps with icons, manifest, and service worker" />
     <meta name="author" content="Lovable" />
 
+    <!-- Favicon - usando uma imagem PNG padrão -->
+    <link rel="icon" href="/placeholder.svg" type="image/svg+xml">
+
     <meta property="og:title" content="PWA Generator - Create Progressive Web Apps" />
     <meta property="og:description" content="Complete PWA Generator - Create progressive web apps with icons, manifest, and service worker" />
     <meta property="og:type" content="website" />
@@ -16,10 +19,32 @@
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:site" content="@lovable_dev" />
     <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="./manifest.json">
+    
+    <!-- Theme color for mobile browsers -->
+    <meta name="theme-color" content="#6366f1">
   </head>
 
   <body>
     <div id="root"></div>
+    
+    <!-- Service Worker Registration -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('./sw.js')
+            .then((registration) => {
+              console.log('SW registrado com sucesso:', registration);
+            })
+            .catch((registrationError) => {
+              console.log('Falha no registro do SW:', registrationError);
+            });
+        });
+      }
+    </script>
+    
     <!-- IMPORTANT: DO NOT REMOVE THIS SCRIPT TAG OR THIS VERY COMMENT! -->
     <script src="https://cdn.gpteng.co/gptengineer.js" type="module"></script>
     <script type="module" src="/src/main.tsx"></script>

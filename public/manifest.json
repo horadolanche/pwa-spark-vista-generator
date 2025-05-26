@@ -1,0 +1,20 @@
+
+{
+  "name": "PWA Generator",
+  "short_name": "PWAGen",
+  "description": "Complete PWA Generator - Create progressive web apps with icons, manifest, and service worker",
+  "start_url": "./",
+  "display": "standalone",
+  "theme_color": "#6366f1",
+  "background_color": "#ffffff",
+  "orientation": "portrait",
+  "scope": "./",
+  "icons": [
+    {
+      "src": "./placeholder.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
