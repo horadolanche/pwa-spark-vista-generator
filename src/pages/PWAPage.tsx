@@ -1,3 +1,4 @@
+
 import { useParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { pwaGenerationService, GeneratedPWA } from '@/services/pwaGenerationService';
@@ -46,6 +47,12 @@ const PWAPage = () => {
       });
       const manifestUrl = URL.createObjectURL(manifestBlob);
 
+      // Remover manifest anterior se existir
+      const existingManifest = document.getElementById('dynamic-manifest');
+      if (existingManifest) {
+        document.head.removeChild(existingManifest);
+      }
+
       // Criar link para o manifest
       const manifestLink = document.createElement('link');
       manifestLink.rel = 'manifest';
@@ -53,16 +60,17 @@ const PWAPage = () => {
       manifestLink.id = 'dynamic-manifest';
       document.head.appendChild(manifestLink);
 
-      // Registrar service worker
+      // Registrar service worker com escopo correto
       if ('serviceWorker' in navigator) {
+        const currentPath = window.location.pathname;
+        
         const swCode = `
 // Service Worker para ${pwa.config.name}
 const CACHE_NAME = '${pwa.config.name.toLowerCase().replace(/\s+/g, '-')}-v1';
-const currentPath = '${window.location.pathname}';
+const currentPath = '${currentPath}';
 const urlsToCache = [
   currentPath,
-  currentPath + '/',
-  '${window.location.origin}${window.location.pathname}',
+  '${window.location.origin}${currentPath}',
   '/placeholder.svg'
 ];
 
@@ -72,7 +80,10 @@ self.addEventListener('install', (event) => {
     caches.open(CACHE_NAME)
       .then((cache) => {
         console.log('Service Worker: Cache aberto');
-        return cache.addAll(urlsToCache);
+        return cache.addAll(urlsToCache).catch((error) => {
+          console.log('Erro ao adicionar ao cache:', error);
+          return Promise.resolve();
+        });
       })
       .then(() => {
         self.skipWaiting();
@@ -100,7 +111,7 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   // Só interceptar requests para nossa aplicação
-  if (event.request.url.includes('${window.location.pathname}')) {
+  if (event.request.url.includes('${currentPath}')) {
     event.respondWith(
       caches.match(event.request)
         .then((response) => {
@@ -157,17 +168,18 @@ self.addEventListener('fetch', (event) => {
         const swBlob = new Blob([swCode], { type: 'application/javascript' });
         const swUrl = URL.createObjectURL(swBlob);
 
-        // Desregistrar service workers anteriores primeiro
+        // Desregistrar service workers anteriores
         navigator.serviceWorker.getRegistrations().then(registrations => {
           registrations.forEach(registration => {
-            if (registration.scope.includes('/pwas/')) {
+            if (registration.scope.includes(currentPath)) {
               registration.unregister();
             }
           });
         });
 
+        // Registrar novo service worker com escopo específico
         navigator.serviceWorker.register(swUrl, { 
-          scope: window.location.pathname + '/'
+          scope: currentPath
         })
           .then((registration) => {
             console.log('SW registrado com sucesso:', registration);
