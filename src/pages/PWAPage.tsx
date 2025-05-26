@@ -25,12 +25,12 @@ const PWAPage = () => {
         name: pwa.config.name,
         short_name: pwa.config.shortName,
         description: pwa.config.description,
-        start_url: "./",
+        start_url: window.location.pathname,
         display: pwa.config.display,
         theme_color: pwa.config.themeColor,
         background_color: pwa.config.backgroundColor,
         orientation: pwa.config.orientation,
-        scope: "./",
+        scope: window.location.pathname,
         icons: pwa.config.icons.length > 0 ? pwa.config.icons : [
           {
             src: "/placeholder.svg",
@@ -50,6 +50,7 @@ const PWAPage = () => {
       const manifestLink = document.createElement('link');
       manifestLink.rel = 'manifest';
       manifestLink.href = manifestUrl;
+      manifestLink.id = 'dynamic-manifest';
       document.head.appendChild(manifestLink);
 
       // Registrar service worker
@@ -57,9 +58,12 @@ const PWAPage = () => {
         const swCode = `
 // Service Worker para ${pwa.config.name}
 const CACHE_NAME = '${pwa.config.name.toLowerCase().replace(/\s+/g, '-')}-v1';
+const currentPath = '${window.location.pathname}';
 const urlsToCache = [
-  '${window.location.pathname}',
-  '${window.location.pathname}/',
+  currentPath,
+  currentPath + '/',
+  '${window.location.origin}${window.location.pathname}',
+  '/placeholder.svg'
 ];
 
 self.addEventListener('install', (event) => {
@@ -95,13 +99,15 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  event.respondWith(
-    caches.match(event.request)
-      .then((response) => {
-        return response || fetch(event.request);
-      })
-      .catch(() => {
-        if (event.request.destination === 'document') {
+  // Só interceptar requests para nossa aplicação
+  if (event.request.url.includes('${window.location.pathname}')) {
+    event.respondWith(
+      caches.match(event.request)
+        .then((response) => {
+          return response || fetch(event.request);
+        })
+        .catch(() => {
+          // Offline fallback
           return new Response(\`
             <!DOCTYPE html>
             <html>
@@ -109,28 +115,60 @@ self.addEventListener('fetch', (event) => {
               <title>${pwa.config.name}</title>
               <meta name="viewport" content="width=device-width, initial-scale=1.0">
               <style>
-                body { font-family: system-ui; padding: 20px; text-align: center; background: ${pwa.config.backgroundColor}; }
+                body { 
+                  font-family: system-ui; 
+                  padding: 20px; 
+                  text-align: center; 
+                  background: ${pwa.config.backgroundColor}; 
+                  color: #333;
+                  min-height: 100vh;
+                  display: flex;
+                  flex-direction: column;
+                  align-items: center;
+                  justify-content: center;
+                }
                 h1 { color: ${pwa.config.themeColor}; }
+                .container { 
+                  max-width: 400px; 
+                  padding: 30px; 
+                  background: white; 
+                  border-radius: 10px; 
+                  box-shadow: 0 4px 20px rgba(0,0,0,0.1); 
+                }
               </style>
             </head>
             <body>
-              <h1>Offline</h1>
-              <p>Você está offline. Conecte-se à internet para acessar ${pwa.config.name}.</p>
+              <div class="container">
+                <h1>📱 ${pwa.config.name}</h1>
+                <h2>Você está offline</h2>
+                <p>Conecte-se à internet para acessar todas as funcionalidades.</p>
+              </div>
             </body>
             </html>
           \`, {
             headers: { 'Content-Type': 'text/html' }
           });
-        }
-      })
-  );
+        })
+    );
+  }
 });
         `;
 
         const swBlob = new Blob([swCode], { type: 'application/javascript' });
         const swUrl = URL.createObjectURL(swBlob);
 
-        navigator.serviceWorker.register(swUrl, { scope: window.location.pathname })
+        // Desregistrar service workers anteriores primeiro
+        navigator.serviceWorker.getRegistrations().then(registrations => {
+          registrations.forEach(registration => {
+            if (registration.scope.includes('/pwas/')) {
+              registration.unregister();
+            }
+          });
+        });
+
+        navigator.serviceWorker.register(swUrl, { 
+          scope: window.location.pathname + '/'
+        })
           .then((registration) => {
             console.log('SW registrado com sucesso:', registration);
           })
@@ -142,8 +180,9 @@ self.addEventListener('fetch', (event) => {
       // Cleanup
       return () => {
         URL.revokeObjectURL(manifestUrl);
-        if (manifestLink && manifestLink.parentNode) {
-          document.head.removeChild(manifestLink);
+        const existingManifest = document.getElementById('dynamic-manifest');
+        if (existingManifest && existingManifest.parentNode) {
+          document.head.removeChild(existingManifest);
         }
       };
     }
