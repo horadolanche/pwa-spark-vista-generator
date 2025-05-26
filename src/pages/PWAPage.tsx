@@ -1,4 +1,3 @@
-
 import { useParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { pwaGenerationService, GeneratedPWA } from '@/services/pwaGenerationService';
@@ -26,12 +25,12 @@ const PWAPage = () => {
         name: pwa.config.name,
         short_name: pwa.config.shortName,
         description: pwa.config.description,
-        start_url: window.location.pathname,
+        start_url: "./",
         display: pwa.config.display,
         theme_color: pwa.config.themeColor,
         background_color: pwa.config.backgroundColor,
         orientation: pwa.config.orientation,
-        scope: window.location.pathname,
+        scope: "./",
         icons: pwa.config.icons.length > 0 ? pwa.config.icons : [
           {
             src: "/placeholder.svg",
@@ -63,14 +62,13 @@ const PWAPage = () => {
       // Registrar service worker com escopo correto
       if ('serviceWorker' in navigator) {
         const currentPath = window.location.pathname;
+        const scopePath = currentPath.endsWith('/') ? currentPath : currentPath + '/';
         
         const swCode = `
 // Service Worker para ${pwa.config.name}
 const CACHE_NAME = '${pwa.config.name.toLowerCase().replace(/\s+/g, '-')}-v1';
-const currentPath = '${currentPath}';
 const urlsToCache = [
-  currentPath,
-  '${window.location.origin}${currentPath}',
+  './',
   '/placeholder.svg'
 ];
 
@@ -111,7 +109,7 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   // Só interceptar requests para nossa aplicação
-  if (event.request.url.includes('${currentPath}')) {
+  if (event.request.url.startsWith(self.location.origin)) {
     event.respondWith(
       caches.match(event.request)
         .then((response) => {
@@ -171,7 +169,7 @@ self.addEventListener('fetch', (event) => {
         // Desregistrar service workers anteriores
         navigator.serviceWorker.getRegistrations().then(registrations => {
           registrations.forEach(registration => {
-            if (registration.scope.includes(currentPath)) {
+            if (registration.scope.includes('/pwas/')) {
               registration.unregister();
             }
           });
@@ -179,7 +177,7 @@ self.addEventListener('fetch', (event) => {
 
         // Registrar novo service worker com escopo específico
         navigator.serviceWorker.register(swUrl, { 
-          scope: currentPath
+          scope: scopePath
         })
           .then((registration) => {
             console.log('SW registrado com sucesso:', registration);
