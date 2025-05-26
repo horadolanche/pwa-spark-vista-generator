@@ -1,4 +1,3 @@
-
 import { useParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { pwaGenerationService, GeneratedPWA } from '@/services/pwaGenerationService';
@@ -26,12 +25,12 @@ const PWAPage = () => {
         name: pwa.config.name,
         short_name: pwa.config.shortName,
         description: pwa.config.description,
-        start_url: `./${pwa.id}`,
+        start_url: "./",
         display: pwa.config.display,
         theme_color: pwa.config.themeColor,
         background_color: pwa.config.backgroundColor,
         orientation: pwa.config.orientation,
-        scope: `./${pwa.id}/`,
+        scope: "./",
         icons: pwa.config.icons.length > 0 ? pwa.config.icons : [
           {
             src: "/placeholder.svg",
@@ -59,8 +58,8 @@ const PWAPage = () => {
 // Service Worker para ${pwa.config.name}
 const CACHE_NAME = '${pwa.config.name.toLowerCase().replace(/\s+/g, '-')}-v1';
 const urlsToCache = [
-  './${pwa.id}',
-  './${pwa.id}/',
+  '${window.location.pathname}',
+  '${window.location.pathname}/',
 ];
 
 self.addEventListener('install', (event) => {
@@ -109,6 +108,10 @@ self.addEventListener('fetch', (event) => {
             <head>
               <title>${pwa.config.name}</title>
               <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <style>
+                body { font-family: system-ui; padding: 20px; text-align: center; background: ${pwa.config.backgroundColor}; }
+                h1 { color: ${pwa.config.themeColor}; }
+              </style>
             </head>
             <body>
               <h1>Offline</h1>
@@ -127,7 +130,7 @@ self.addEventListener('fetch', (event) => {
         const swBlob = new Blob([swCode], { type: 'application/javascript' });
         const swUrl = URL.createObjectURL(swBlob);
 
-        navigator.serviceWorker.register(swUrl)
+        navigator.serviceWorker.register(swUrl, { scope: window.location.pathname })
           .then((registration) => {
             console.log('SW registrado com sucesso:', registration);
           })
@@ -139,7 +142,9 @@ self.addEventListener('fetch', (event) => {
       // Cleanup
       return () => {
         URL.revokeObjectURL(manifestUrl);
-        document.head.removeChild(manifestLink);
+        if (manifestLink && manifestLink.parentNode) {
+          document.head.removeChild(manifestLink);
+        }
       };
     }
   }, [pwa]);
