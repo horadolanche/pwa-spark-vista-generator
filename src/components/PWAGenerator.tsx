@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -66,7 +67,9 @@ const PWAGenerator = () => {
   useEffect(() => {
     const loadPWAs = async () => {
       try {
+        console.log('Carregando PWAs do usuário...');
         const pwas = await pwaGenerationService.getGeneratedPWAs();
+        console.log('PWAs carregados:', pwas);
         setGeneratedPWAs(pwas);
       } catch (error) {
         console.error('Erro ao carregar PWAs:', error);
@@ -81,34 +84,47 @@ const PWAGenerator = () => {
   }, []);
 
   const generatePWA = async () => {
+    console.log('🚀 Iniciando geração do PWA...');
+    console.log('Config atual:', config);
+    
     setIsGenerating(true);
     
     try {
+      console.log('Exibindo toast de início...');
       toast({
         title: "Gerando PWA...",
         description: "Criando estrutura de arquivos e configurações...",
       });
 
+      console.log('Chamando serviço de geração...');
       const generatedPWA = await pwaGenerationService.generatePWA(config);
+      console.log('PWA gerado com sucesso:', generatedPWA);
       
-      setGeneratedPWAs(prev => [generatedPWA, ...prev]);
+      setGeneratedPWAs(prev => {
+        const updated = [generatedPWA, ...prev];
+        console.log('PWAs atualizados:', updated);
+        return updated;
+      });
       
+      console.log('Exibindo toast de sucesso...');
       toast({
         title: "PWA Gerado com Sucesso! 🚀",
         description: `${config.name} está pronto e acessível via link direto.`,
       });
 
       // Automaticamente muda para a aba de PWAs gerados
+      console.log('Mudando para aba generated...');
       setActiveTab('generated');
       
     } catch (error) {
-      console.error('Erro na geração do PWA:', error);
+      console.error('❌ Erro na geração do PWA:', error);
       toast({
         title: "Erro na Geração",
-        description: "Falha ao gerar o PWA. Verifique sua conexão e tente novamente.",
+        description: error instanceof Error ? error.message : "Falha ao gerar o PWA. Verifique sua conexão e tente novamente.",
         variant: "destructive",
       });
     } finally {
+      console.log('Finalizando geração...');
       setIsGenerating(false);
     }
   };
@@ -278,7 +294,10 @@ const PWAGenerator = () => {
             {/* Action Buttons */}
             <div className="flex gap-4">
               <Button 
-                onClick={generatePWA}
+                onClick={() => {
+                  console.log('🎯 Botão Gerar PWA clicado!');
+                  generatePWA();
+                }}
                 disabled={isGenerating}
                 className="flex-1 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
               >
