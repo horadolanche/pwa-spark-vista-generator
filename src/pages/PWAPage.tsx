@@ -200,10 +200,10 @@ self.addEventListener('fetch', (event) => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-tr from-blue-100 via-white to-indigo-100">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Carregando PWA...</p>
+          <div className="animate-spin rounded-full h-20 w-20 border-b-4 border-blue-500 mx-auto shadow-lg"></div>
+          <p className="mt-4 text-gray-600 text-lg font-medium tracking-wide">Carregando PWA...</p>
         </div>
       </div>
     );
@@ -211,13 +211,13 @@ self.addEventListener('fetch', (event) => {
 
   if (!pwa) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-100">
-        <div className="text-center bg-white p-8 rounded-lg shadow-lg max-w-md">
-          <h1 className="text-2xl font-bold text-red-600 mb-4">PWA Não Encontrado</h1>
-          <p className="text-gray-600 mb-4">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-bl from-red-50 via-white to-blue-50">
+        <div className="text-center bg-white p-10 rounded-2xl shadow-2xl max-w-md border border-red-100">
+          <h1 className="text-3xl font-extrabold text-red-600 mb-4 drop-shadow">PWA Não Encontrado</h1>
+          <p className="text-gray-600 mb-4 text-base">
             O PWA solicitado não foi encontrado ou pode ter sido removido.
           </p>
-          <a href="/" className="text-blue-500 hover:text-blue-700 underline">
+          <a href="/" className="inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg shadow mt-2 transition-all duration-150 font-semibold">
             Voltar ao Gerador de PWA
           </a>
         </div>
@@ -227,60 +227,63 @@ self.addEventListener('fetch', (event) => {
 
   return (
     <div 
-      className="min-h-screen flex flex-col items-center justify-center text-center p-6"
+      className="min-h-screen flex flex-col items-center justify-center text-center p-6 bg-gradient-to-b from-blue-100 via-white to-indigo-50"
       style={{ backgroundColor: pwa.config.backgroundColor }}
     >
-      <div className="max-w-2xl mx-auto bg-white rounded-lg shadow-xl p-8">
+      <div className="max-w-2xl mx-auto bg-white/90 rounded-3xl shadow-2xl p-9 border border-blue-100">
         <h1 
-          className="text-4xl font-bold mb-4"
+          className="text-5xl font-extrabold mb-5 tracking-tight drop-shadow-md"
           style={{ color: pwa.config.themeColor }}
         >
           {pwa.config.name}
         </h1>
         
-        <p className="text-lg text-gray-600 mb-6">
+        <p className="text-xl text-gray-700 mb-7 font-medium">
           {pwa.config.description}
         </p>
         
-        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-lg mb-6">
-          <h2 className="text-xl font-semibold text-gray-800 mb-3">
-            🚀 Seu PWA está funcionando!
+        <div className="bg-gradient-to-tr from-blue-50 via-indigo-100 to-blue-100 p-7 rounded-2xl mb-8 shadow-md border">
+          <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center justify-center gap-2">
+            🚀
+            <span className="tracking-wide">Seu PWA está funcionando!</span>
           </h2>
-          <p className="text-gray-700 mb-4">
+          <p className="text-gray-700 mb-4 text-base">
             Este é um Progressive Web App totalmente funcional gerado automaticamente.
           </p>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-            <div className="bg-white p-3 rounded">
-              <strong>📱 Instalável</strong>
-              <p>Pode ser instalado como app nativo</p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 text-base">
+            <div className="bg-white/80 p-4 rounded-2xl shadow space-y-2 border">
+              <strong className="block text-blue-700">📱 Instalável</strong>
+              <p className="text-gray-700">Pode ser instalado como app nativo</p>
             </div>
-            <div className="bg-white p-3 rounded">
-              <strong>⚡ Offline</strong>
-              <p>Funciona mesmo sem internet</p>
+            <div className="bg-white/80 p-4 rounded-2xl shadow space-y-2 border">
+              <strong className="block text-green-700">⚡ Offline</strong>
+              <p className="text-gray-700">Funciona mesmo sem internet</p>
             </div>
-            <div className="bg-white p-3 rounded">
-              <strong>🔄 Atualizações</strong>
-              <p>Atualiza automaticamente</p>
+            <div className="bg-white/80 p-4 rounded-2xl shadow space-y-2 border">
+              <strong className="block text-indigo-700">🔄 Atualizações</strong>
+              <p className="text-gray-700">Atualiza automaticamente</p>
             </div>
           </div>
         </div>
 
-        <div className="text-sm text-gray-500">
-          <p>PWA ID: {pwa.id}</p>
-          <p>Criado em: {new Intl.DateTimeFormat('pt-BR', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-          }).format(pwa.createdAt)}</p>
+        <div className="text-base text-gray-500 mb-4">
+          <p>PWA ID: <span className="font-mono text-xs">{pwa.id}</span></p>
+          <p>Criado em: <span className="font-semibold">
+            {new Intl.DateTimeFormat('pt-BR', {
+              day: '2-digit',
+              month: '2-digit',
+              year: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit'
+            }).format(pwa.createdAt)}
+          </span></p>
         </div>
 
-        <div className="mt-6">
+        <div className="mt-8">
           <button
             onClick={() => window.location.href = '/'}
-            className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg transition-colors"
+            className="bg-gradient-to-r from-blue-500 via-indigo-500 to-blue-700 hover:from-blue-600 hover:to-indigo-700 text-white px-8 py-3 rounded-2xl font-bold text-lg shadow-md transition-all duration-200 hover:scale-105"
           >
             Criar Novo PWA
           </button>
