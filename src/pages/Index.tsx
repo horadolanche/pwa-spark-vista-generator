@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Smartphone, Zap, Globe, Download, Sparkles, Rocket } from "lucide-react";
-import { PWAGenerator } from "@/components/PWAGenerator";
+import PWAGenerator from "@/components/PWAGenerator";
 import { GeneratedPWAsList } from "@/components/GeneratedPWAsList";
 
 const Index = () => {
@@ -124,7 +124,7 @@ const Index = () => {
                 </div>
                 
                 <div className="max-w-6xl mx-auto">
-                  <GeneratedPWAsList />
+                  <GeneratedPWAsList pwas={[]} onDelete={() => {}} />
                 </div>
               </div>
             )}
