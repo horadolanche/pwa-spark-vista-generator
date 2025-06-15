@@ -9,14 +9,26 @@ const PWAPage = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!pwaId) {
-      setLoading(false);
-      return;
-    }
+    const loadPWA = async () => {
+      if (!pwaId) {
+        setLoading(false);
+        return;
+      }
 
-    const foundPwa = pwaGenerationService.getPWAById(pwaId);
-    setPwa(foundPwa || null);
-    setLoading(false);
+      try {
+        console.log('Buscando PWA com ID:', pwaId);
+        const foundPwa = await pwaGenerationService.getPWAById(pwaId);
+        console.log('PWA encontrado:', foundPwa);
+        setPwa(foundPwa || null);
+      } catch (error) {
+        console.error('Erro ao carregar PWA:', error);
+        setPwa(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadPWA();
   }, [pwaId]);
 
   useEffect(() => {
@@ -205,21 +217,21 @@ self.addEventListener('fetch', (event) => {
     <div 
       className="min-h-screen"
       style={{ 
-        backgroundColor: pwa.config.backgroundColor,
-        color: pwa.config.themeColor 
+        backgroundColor: pwa?.config?.backgroundColor || '#ffffff',
+        color: pwa?.config?.themeColor || '#000000'
       }}
     >
       <div className="container mx-auto px-4 py-8 text-center">
         <div className="max-w-lg mx-auto bg-white/95 rounded-2xl shadow-xl p-8">
           <h1 
             className="text-4xl font-bold mb-4"
-            style={{ color: pwa.config.themeColor }}
+            style={{ color: pwa?.config?.themeColor || '#000000' }}
           >
-            {pwa.config.name}
+            {pwa?.config?.name || 'PWA'}
           </h1>
           
           <p className="text-lg text-gray-700 mb-6">
-            {pwa.config.description}
+            {pwa?.config?.description || 'Progressive Web App'}
           </p>
           
           <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl mb-6">
@@ -251,8 +263,8 @@ self.addEventListener('fetch', (event) => {
               onClick={() => {
                 if ('serviceWorker' in navigator && 'share' in navigator) {
                   navigator.share({
-                    title: pwa.config.name,
-                    text: pwa.config.description,
+                    title: pwa?.config?.name || 'PWA',
+                    text: pwa?.config?.description || 'Progressive Web App',
                     url: window.location.href
                   });
                 }

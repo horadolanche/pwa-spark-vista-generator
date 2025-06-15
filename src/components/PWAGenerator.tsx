@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -62,6 +62,20 @@ const PWAGenerator = () => {
   const [generatedPWAs, setGeneratedPWAs] = useState<GeneratedPWA[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
 
+  // Carregar PWAs quando o componente montar
+  useEffect(() => {
+    const loadPWAs = async () => {
+      try {
+        const pwas = await pwaGenerationService.getGeneratedPWAs();
+        setGeneratedPWAs(pwas);
+      } catch (error) {
+        console.error('Erro ao carregar PWAs:', error);
+      }
+    };
+
+    loadPWAs();
+  }, []);
+
   const updateConfig = useCallback((updates: Partial<PWAConfig>) => {
     setConfig(prev => ({ ...prev, ...updates }));
   }, []);
@@ -88,9 +102,10 @@ const PWAGenerator = () => {
       setActiveTab('generated');
       
     } catch (error) {
+      console.error('Erro na geração do PWA:', error);
       toast({
         title: "Erro na Geração",
-        description: "Falha ao gerar o PWA. Tente novamente.",
+        description: "Falha ao gerar o PWA. Verifique sua conexão e tente novamente.",
         variant: "destructive",
       });
     } finally {
@@ -98,13 +113,19 @@ const PWAGenerator = () => {
     }
   };
 
-  const handleDeletePWA = (id: string) => {
-    const deleted = pwaGenerationService.deletePWA(id);
+  const handleDeletePWA = async (id: string) => {
+    const deleted = await pwaGenerationService.deletePWA(id);
     if (deleted) {
       setGeneratedPWAs(prev => prev.filter(pwa => pwa.id !== id));
       toast({
         title: "PWA Excluído",
         description: "O PWA foi removido com sucesso.",
+      });
+    } else {
+      toast({
+        title: "Erro ao Excluir",
+        description: "Não foi possível excluir o PWA.",
+        variant: "destructive",
       });
     }
   };
