@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export interface GeneratedPWA {
@@ -14,26 +13,19 @@ export interface GeneratedPWA {
 class PWAGenerationService {
   private storageKey = 'generated-pwas';
 
-  generatePWAId(): string {
-    return Date.now().toString(36) + Math.random().toString(36).substr(2);
-  }
-
   async generatePWA(config: any): Promise<GeneratedPWA> {
     console.log('🔧 PWAGenerationService.generatePWA chamado com:', config);
-    
-    const pwaId = this.generatePWAId();
-    console.log('📝 ID gerado para PWA:', pwaId);
-    
+
     try {
       // Verificar autenticação
       console.log('🔐 Verificando autenticação...');
       const { data: user, error: userError } = await supabase.auth.getUser();
-      
+
       if (userError) {
         console.error('❌ Erro ao verificar usuário:', userError);
         throw new Error('Erro de autenticação: ' + userError.message);
       }
-      
+
       if (!user.user) {
         console.error('❌ Usuário não autenticado');
         throw new Error('Usuário não autenticado. Faça login para continuar.');
@@ -41,9 +33,8 @@ class PWAGenerationService {
 
       console.log('✅ Usuário autenticado:', user.user.id);
 
-      // Preparar dados para inserção
+      // Preparar dados para inserção (sem ID)
       const pwaData = {
-        id: pwaId,
         name: config.name,
         short_name: config.shortName,
         description: config.description,
@@ -52,12 +43,12 @@ class PWAGenerationService {
         display: config.display,
         orientation: config.orientation,
         icons: config.icons || [],
-        user_id: user.user.id
+        user_id: user.user.id,
       };
 
       console.log('💾 Inserindo PWA no Supabase:', pwaData);
 
-      // Salvar no Supabase
+      // Salvar no Supabase (ID UUID será gerado pelo banco)
       const { data, error } = await supabase
         .from('pwas')
         .insert(pwaData)
@@ -72,12 +63,12 @@ class PWAGenerationService {
       console.log('✅ PWA salvo com sucesso no Supabase:', data);
 
       const generatedPWA: GeneratedPWA = {
-        id: pwaId,
+        id: data.id, // O ID agora é UUID gerado pelo banco
         name: config.name,
         shortName: config.shortName,
         description: config.description,
         createdAt: new Date(data.created_at),
-        url: `${window.location.origin}/pwas/${pwaId}`,
+        url: `${window.location.origin}/pwas/${data.id}`,
         config: {
           ...config,
           themeColor: data.theme_color,
@@ -90,7 +81,7 @@ class PWAGenerationService {
 
       console.log('🎉 PWA gerado com sucesso:', generatedPWA);
       return generatedPWA;
-      
+
     } catch (error) {
       console.error('💥 Erro geral na geração do PWA:', error);
       throw error;
