@@ -59,12 +59,19 @@ const PWAPage = () => {
       manifestLink.id = 'dynamic-manifest';
       document.head.appendChild(manifestLink);
 
-      // Registrar service worker com escopo correto
+      // Registrar service worker com escopo correto e tratamento de erros
       if ('serviceWorker' in navigator) {
-        const currentPath = window.location.pathname;
-        const scopePath = currentPath.endsWith('/') ? currentPath : currentPath + '/';
-        
-        const swCode = `
+        // Limpar registros anteriores primeiro
+        navigator.serviceWorker.getRegistrations().then(registrations => {
+          registrations.forEach(registration => {
+            if (registration.scope.includes(window.location.pathname)) {
+              registration.unregister();
+            }
+          });
+          
+          // Aguardar um pouco antes de registrar o novo SW
+          setTimeout(() => {
+            const swCode = `
 // Service Worker para ${pwa.config.name}
 const CACHE_NAME = '${pwa.config.name.toLowerCase().replace(/\s+/g, '-')}-v1';
 const urlsToCache = [
@@ -161,30 +168,29 @@ self.addEventListener('fetch', (event) => {
     );
   }
 });
-        `;
+            `;
 
-        const swBlob = new Blob([swCode], { type: 'application/javascript' });
-        const swUrl = URL.createObjectURL(swBlob);
+            const swBlob = new Blob([swCode], { type: 'application/javascript' });
+            const swUrl = URL.createObjectURL(swBlob);
 
-        // Desregistrar service workers anteriores
-        navigator.serviceWorker.getRegistrations().then(registrations => {
-          registrations.forEach(registration => {
-            if (registration.scope.includes('/pwas/')) {
-              registration.unregister();
-            }
-          });
+            // Registrar novo service worker com escopo relativo
+            navigator.serviceWorker.register(swUrl, { 
+              scope: './'
+            })
+              .then((registration) => {
+                console.log('SW registrado com sucesso:', registration);
+                
+                // Cleanup da URL do blob após registro bem-sucedido
+                setTimeout(() => {
+                  URL.revokeObjectURL(swUrl);
+                }, 1000);
+              })
+              .catch((error) => {
+                console.log('Falha no registro do SW:', error);
+                URL.revokeObjectURL(swUrl);
+              });
+          }, 500);
         });
-
-        // Registrar novo service worker com escopo específico
-        navigator.serviceWorker.register(swUrl, { 
-          scope: scopePath
-        })
-          .then((registration) => {
-            console.log('SW registrado com sucesso:', registration);
-          })
-          .catch((error) => {
-            console.log('Falha no registro do SW:', error);
-          });
       }
 
       // Cleanup
